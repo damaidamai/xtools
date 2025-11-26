@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>XTools Subdomain Enumeration</title>
+    <style>
+      :root {
+        --bg: #121212;
+        --surface: #1e1e1e;
+        --border: #2a2a2a;
+        --text: #e0e0e0;
+        --muted: #a0a0a0;
+        --blue: #3b82f6;
+        --red: #e53e3e;
+        --green: #22c55e;
+      }
+      body {
+        font-family: "Inter", system-ui, -apple-system, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        margin: 0;
+        min-height: 100vh;
+      }
+      .layout {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        min-height: 100vh;
+      }
+      .sidebar {
+        background: #0f0f0f;
+        border-right: 1px solid var(--border);
+        padding: 24px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .sidebar h2 {
+        margin: 0;
+        font-size: 18px;
+        letter-spacing: 0.2px;
+      }
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        color: var(--muted);
+        text-decoration: none;
+        border: 1px solid transparent;
+      }
+      .nav-item.active {
+        color: var(--text);
+        border-color: var(--border);
+        background: #181818;
+        box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.25);
+      }
+      .nav-item:hover {
+        color: var(--text);
+        border-color: var(--border);
+      }
+      .main {
+        padding: 24px;
+        display: grid;
+        gap: 16px;
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+      label {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--muted);
+      }
+      input,
+      select,
+      button {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: #181818;
+        color: var(--text);
+      }
+      button {
+        background: var(--blue);
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        margin-top: 8px;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .row {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      }
+      .status {
+        font-weight: 600;
+      }
+      .status.running {
+        color: var(--blue);
+      }
+      .status.succeeded {
+        color: var(--green);
+      }
+      .status.failed {
+        color: var(--red);
+      }
+      pre {
+        background: #0f0f0f;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        color: var(--muted);
+        overflow: auto;
+        max-height: 240px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        border-bottom: 1px solid var(--border);
+        padding: 8px;
+        text-align: left;
+      }
+      th {
+        color: var(--muted);
+        font-weight: 500;
+      }
+      .muted {
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <h2>XTools</h2>
+        <div>
+          <a class="nav-item active" href="#">
+            <span style="color: var(--red)">●</span>
+            <span>子域枚举</span>
+          </a>
+          <a class="nav-item" href="#">
+            <span style="color: var(--blue)">●</span>
+            <span>态势总览（预留）</span>
+          </a>
+          <a class="nav-item" href="#">
+            <span style="color: var(--muted)">●</span>
+            <span>配置（预留）</span>
+          </a>
+        </div>
+      </aside>
+      <main class="main">
+        <header style="display:flex; align-items:center; justify-content:space-between">
+          <div>
+            <div class="muted">资产发现 · 红队</div>
+            <h1 style="margin:4px 0 0">Subdomain Enumeration</h1>
+          </div>
+          <div style="display:flex; gap:8px">
+            <div class="card" style="margin:0; min-width:180px">
+              <div class="muted">最近运行状态</div>
+              <div id="statusBadge" class="status" style="font-size:18px">-</div>
+            </div>
+            <div class="card" style="margin:0; min-width:180px">
+              <div class="muted">默认字典</div>
+              <div id="defaultWordlist" style="font-size:16px">-</div>
+            </div>
+          </div>
+        </header>
+
+        <div class="card">
+          <div class="row">
+            <div>
+              <label for="domain">Domain</label>
+              <input id="domain" type="text" placeholder="example.com" />
+            </div>
+            <div>
+              <label for="wordlist">Wordlist</label>
+              <select id="wordlist">
+                <option value="">默认字典</option>
+              </select>
+            </div>
+          </div>
+          <button id="startBtn">Start Enumeration</button>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-top:0">Wordlists</h3>
+          <div class="row">
+            <div>
+              <label for="upload">Upload wordlist (text, &lt;=10MB)</label>
+              <input id="upload" type="file" accept=".txt,text/plain" />
+            </div>
+            <div>
+              <label for="uploadName">Name (optional)</label>
+              <input id="uploadName" type="text" placeholder="custom.txt" />
+              <label style="margin-top:8px; display:flex; gap:8px; align-items:center">
+                <input id="uploadDefault" type="checkbox" style="width:auto" /> Set as default
+              </label>
+              <button id="uploadBtn" style="margin-top:8px">Upload</button>
+            </div>
+          </div>
+          <div style="margin-top: 12px">
+            <div class="muted">Existing wordlists</div>
+            <ul id="wordlistItems" style="list-style:none; padding:0; margin-top:8px"></ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="row">
+            <div>
+              <div class="muted">Run ID</div>
+              <div id="runId">-</div>
+            </div>
+            <div>
+              <div class="muted">Status</div>
+              <div id="runStatus" class="status">-</div>
+            </div>
+          </div>
+          <div style="margin-top: 12px">
+            <div class="muted">Logs</div>
+            <pre id="logs">No logs yet.</pre>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="muted">Results</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Subdomain</th>
+                <th>Source</th>
+                <th>Discovered</th>
+              </tr>
+            </thead>
+            <tbody id="resultsBody"></tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const apiBase = window.API_BASE || "http://localhost:8000";
+      const wordlistSelect = document.getElementById("wordlist");
+      const startBtn = document.getElementById("startBtn");
+      const uploadBtn = document.getElementById("uploadBtn");
+      const runStatusEl = document.getElementById("runStatus");
+      const logsEl = document.getElementById("logs");
+      const runIdEl = document.getElementById("runId");
+      const resultsBody = document.getElementById("resultsBody");
+      const wordlistItems = document.getElementById("wordlistItems");
+      const defaultWordlist = document.getElementById("defaultWordlist");
+      const statusBadge = document.getElementById("statusBadge");
+      let currentRunId = null;
+      let pollTimer = null;
+
+      async function fetchWordlists() {
+        try {
+          const res = await fetch(`${apiBase}/wordlists`);
+          const data = await res.json();
+          wordlistSelect.innerHTML = '<option value="">默认字典</option>';
+          (data.items || []).forEach((item) => {
+            const opt = document.createElement("option");
+            opt.value = item.id;
+            opt.textContent = `${item.name} ${item.is_default ? "(默认)" : ""}`;
+            wordlistSelect.appendChild(opt);
+          });
+          renderWordlistList(data.items || []);
+          const def = (data.items || []).find((i) => i.is_default);
+          defaultWordlist.textContent = def ? def.name : "未设置";
+        } catch (err) {
+          console.error("Failed to load wordlists", err);
+        }
+      }
+
+      function renderWordlistList(items) {
+        wordlistItems.innerHTML = "";
+        items.forEach((item) => {
+          const li = document.createElement("li");
+          li.style.display = "flex";
+          li.style.justifyContent = "space-between";
+          li.style.alignItems = "center";
+          li.style.border = `1px solid var(--border)`;
+          li.style.padding = "8px";
+          li.style.borderRadius = "8px";
+          li.style.marginBottom = "6px";
+          li.innerHTML = `<div><div>${item.name}</div><div class="muted">${(item.size_bytes / 1024).toFixed(1)} KB • ${item.is_default ? "默认" : "可用"}</div></div>`;
+          if (!item.is_default) {
+            const btn = document.createElement("button");
+            btn.style.width = "120px";
+            btn.textContent = "设为默认";
+            btn.onclick = () => setDefault(item.id);
+            li.appendChild(btn);
+          }
+          wordlistItems.appendChild(li);
+        });
+      }
+
+      async function setDefault(id) {
+        try {
+          const res = await fetch(`${apiBase}/wordlists/${id}/default`, { method: "POST" });
+          if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.detail || "Failed to set default");
+          }
+          await fetchWordlists();
+        } catch (err) {
+          alert(err.message);
+        }
+      }
+
+      async function uploadWordlist() {
+        const fileInput = document.getElementById("upload");
+        const nameInput = document.getElementById("uploadName");
+        const isDefault = document.getElementById("uploadDefault").checked;
+        if (!fileInput.files.length) {
+          alert("请选择字典文件");
+          return;
+        }
+        const file = fileInput.files[0];
+        const form = new FormData();
+        form.append("file", file);
+        if (nameInput.value.trim()) form.append("name", nameInput.value.trim());
+        form.append("is_default", isDefault ? "true" : "false");
+        uploadBtn.disabled = true;
+        try {
+          const res = await fetch(`${apiBase}/wordlists`, {
+            method: "POST",
+            body: form,
+          });
+          if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.detail || "上传失败");
+          }
+          await fetchWordlists();
+          fileInput.value = "";
+          nameInput.value = "";
+          document.getElementById("uploadDefault").checked = false;
+        } catch (err) {
+          alert(err.message);
+        } finally {
+          uploadBtn.disabled = false;
+        }
+      }
+
+      async function startRun() {
+        const domain = document.getElementById("domain").value.trim();
+        const wordlistId = wordlistSelect.value || null;
+        if (!domain) {
+          alert("请输入域名");
+          return;
+        }
+        startBtn.disabled = true;
+        try {
+          const res = await fetch(`${apiBase}/runs`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ domain, wordlist_id: wordlistId ? Number(wordlistId) : null }),
+          });
+          if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.detail || "Failed to start run");
+          }
+          const data = await res.json();
+          currentRunId = data.id;
+          runIdEl.textContent = data.id;
+          runStatusEl.textContent = data.status;
+          runStatusEl.className = `status ${data.status}`;
+          statusBadge.textContent = data.status;
+          statusBadge.className = `status ${data.status}`;
+          logsEl.textContent = data.log_snippet || "Starting...";
+          resultsBody.innerHTML = "";
+          if (pollTimer) clearInterval(pollTimer);
+          pollTimer = setInterval(pollStatus, 2500);
+        } catch (err) {
+          alert(err.message);
+        } finally {
+          startBtn.disabled = false;
+        }
+      }
+
+      async function pollStatus() {
+        if (!currentRunId) return;
+        try {
+          const res = await fetch(`${apiBase}/runs/${currentRunId}`);
+          const data = await res.json();
+          runStatusEl.textContent = data.status;
+          runStatusEl.className = `status ${data.status}`;
+          statusBadge.textContent = data.status;
+          statusBadge.className = `status ${data.status}`;
+          logsEl.textContent = data.log_snippet || "";
+          if (["succeeded", "failed"].includes(data.status)) {
+            clearInterval(pollTimer);
+            pollTimer = null;
+            await loadResults();
+          }
+        } catch (err) {
+          console.error("Failed to poll", err);
+        }
+      }
+
+      async function loadResults() {
+        if (!currentRunId) return;
+        const res = await fetch(`${apiBase}/runs/${currentRunId}/results`);
+        const data = await res.json();
+        resultsBody.innerHTML = "";
+        (data.results || []).forEach((item) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td>${item.host}</td><td>${item.source || "-"}</td><td>${item.discovered_at || ""}</td>`;
+          resultsBody.appendChild(tr);
+        });
+      }
+
+      startBtn.addEventListener("click", startRun);
+      uploadBtn.addEventListener("click", uploadWordlist);
+      fetchWordlists();
+    </script>
+  </body>
+</html>

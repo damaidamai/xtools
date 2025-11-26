@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Space+Grotesk:wght@400;500;600&display=swap");
+
+:root {
+  color-scheme: dark;
+  --bg: #0a0c12;
+  --surface: #121723;
+  --border: #1f2430;
+  --text: #e7ecf4;
+  --muted: #97a0b6;
+  --blue: #6cb2ff;
+  --red: #ff5c8a;
+  --green: #53d997;
+}
+
+html,
+body {
+  background: radial-gradient(circle at 18% 18%, #111725, transparent 30%),
+    radial-gradient(circle at 78% 5%, #0f1727, transparent 24%),
+    linear-gradient(135deg, rgba(28, 35, 48, 0.6), rgba(10, 12, 18, 0.9)),
+    var(--bg);
+  color: var(--text);
+  font-family: "Space Grotesk", "Inter", "SF Pro Display", "Microgramma", "Eurostile",
+    system-ui, -apple-system, sans-serif;
+  letter-spacing: 0.05em;
+}
+
+body {
+  min-height: 100vh;
+}
+
+.font-tech {
+  font-family: "Orbitron", "Microgramma", "Eurostile", "Space Grotesk",
+    "SF Pro Display", system-ui, sans-serif;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.glow-dot {
+  background: radial-gradient(circle, #6cb2ff, #1f2430 65%);
+  box-shadow: 0 0 12px rgba(108, 178, 255, 0.7);
+}
+
+* {
+  border-color: var(--border);
+}
