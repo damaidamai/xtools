@@ -76,6 +76,12 @@ backend/data/*.db-shm
 backend/data/*.db-wal
 *.sqlite
 *.sqlite3
+# Keep bundled DB and wordlists in repo
+!backend/data/xtools.db
+!backend/data/xtools.db-shm
+!backend/data/xtools.db-wal
+!backend/data/wordlists/
+!backend/data/wordlists/**
 
 # AI/ML
 backend/chromadb/

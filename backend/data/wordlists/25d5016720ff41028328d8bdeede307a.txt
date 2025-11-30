@@ -1,0 +1,14 @@
+mgr
+admin
+boss
+mer
+merchant
+mch
+user
+doc
+docs
+api
+m
+a
+u
+agent

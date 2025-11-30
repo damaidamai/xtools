@@ -6,21 +6,24 @@
 
 :root {
   color-scheme: dark;
-  --bg: #0a0c12;
-  --surface: #121723;
-  --border: #1f2430;
-  --text: #e7ecf4;
-  --muted: #97a0b6;
-  --blue: #6cb2ff;
-  --red: #ff5c8a;
-  --green: #53d997;
+  --bg: #0d1118;
+  --surface: #131a24;
+  --surface-strong: #0f141d;
+  --border: #1b2431;
+  --text: #e4e9f2;
+  --muted: #9aa5b7;
+  --primary: #8fb6ff;
+  --primary-soft: #a8c7ff;
+  --red: #e06464;
+  --green: #58c48f;
 }
 
 html,
 body {
-  background: radial-gradient(circle at 18% 18%, #111725, transparent 30%),
-    radial-gradient(circle at 78% 5%, #0f1727, transparent 24%),
-    linear-gradient(135deg, rgba(28, 35, 48, 0.6), rgba(10, 12, 18, 0.9)),
+  background:
+    radial-gradient(circle at 18% 18%, rgba(143, 182, 255, 0.14), transparent 30%),
+    radial-gradient(circle at 78% 6%, rgba(143, 182, 255, 0.08), transparent 28%),
+    linear-gradient(145deg, rgba(13, 17, 24, 0.96), rgba(9, 12, 18, 0.94)),
     var(--bg);
   color: var(--text);
   font-family: "Space Grotesk", "Inter", "SF Pro Display", "Microgramma", "Eurostile",
@@ -40,8 +43,8 @@ body {
 }
 
 .glow-dot {
-  background: radial-gradient(circle, #6cb2ff, #1f2430 65%);
-  box-shadow: 0 0 12px rgba(108, 178, 255, 0.7);
+  background: radial-gradient(circle, var(--primary), #0f151f 65%);
+  box-shadow: 0 0 12px rgba(143, 182, 255, 0.55);
 }
 
 * {

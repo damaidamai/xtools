@@ -10,15 +10,15 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "#121212",
-        surface: "#1E1E1E",
-        border: "#2A2A2A",
-        foreground: "#E0E0E0",
-        muted: "#A0A0A0",
-        primary: "#3B82F6",
-        destructive: "#E53E3E",
-        success: "#22C55E",
-        warning: "#F6C23E",
+        background: "#0d1118",
+        surface: "#131a24",
+        border: "#1b2431",
+        foreground: "#e4e9f2",
+        muted: "#9aa5b7",
+        primary: "#8fb6ff",
+        destructive: "#e06464",
+        success: "#58c48f",
+        warning: "#d7b775",
       },
       borderRadius: {
         lg: "12px",

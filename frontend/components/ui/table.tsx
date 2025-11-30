@@ -14,7 +14,7 @@ export function TBody(props: HTMLAttributes<HTMLTableSectionElement>) {
 }
 
 export function TR(props: HTMLAttributes<HTMLTableRowElement>) {
-  return <tr className="border-b border-border last:border-none" {...props} />;
+  return <tr className="border-b border-border/70 last:border-none" {...props} />;
 }
 
 export function TH({ className, ...props }: HTMLAttributes<HTMLTableCellElement>) {

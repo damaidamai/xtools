@@ -10,15 +10,15 @@ pnpm dev
 ```
 
 ## 目录
-- `app/`: App Router 布局与页面（子域枚举）。
+- `app/`: App Router 布局与页面（子域枚举、字典管理）。
 - `components/ui/`: 轻量 Shadcn 风格组件（Button/Input/Card/Badge/Table 等）。
 - `lib/api.ts`: 后端接口封装（wordlist/run）。
 - `tailwind.config.ts`: 深色主题色板配置。
 
 ## 功能
 - 左侧导航 + 右侧工作区，顶部状态卡片（最近运行状态、默认字典）。
-- 子域枚举：域名输入、字典选择，触发后自动轮询状态/日志并展示结果表。
-- 字典管理：上传（文本 ≤10MB）、设为默认、列表展示。
+- 子域枚举：域名输入、二级域名字典选择（自动筛选 type=subdomain），触发后自动轮询状态/日志并展示结果表。
+- 字典管理：按类型（subdomain/username/password）上传（文本 ≤10MB）、设为默认、列表展示。
 
 ## 注意
 - 页面以客户端渲染为主（无 SSR）；轮询周期 2.5s。

@@ -3,7 +3,8 @@ from __future__ import annotations
 import datetime as dt
 from typing import Optional
 
-from sqlmodel import Column, DateTime, Field, SQLModel, UniqueConstraint
+from sqlalchemy import Column, DateTime, Text
+from sqlmodel import Field, SQLModel, UniqueConstraint
 
 
 class SubdomainRun(SQLModel, table=True):
@@ -37,6 +38,10 @@ class Subdomain(SQLModel, table=True):
     run_id: int = Field(foreign_key="subdomain_runs.id")
     host: str = Field(index=True)
     source: Optional[str] = None
+    metadata_json: Optional[str] = Field(
+        default=None,
+        sa_column=Column("metadata", Text, nullable=True),
+    )
     created_at: dt.datetime = Field(
         default_factory=lambda: dt.datetime.now(dt.timezone.utc),
         sa_column=Column(DateTime(timezone=True)),
@@ -50,7 +55,26 @@ class Wordlist(SQLModel, table=True):
     name: str
     path: str
     size_bytes: int
+    type: str = Field(default="subdomain", index=True)
     is_default: bool = Field(default=False)
+    created_at: dt.datetime = Field(
+        default_factory=lambda: dt.datetime.now(dt.timezone.utc),
+        sa_column=Column(DateTime(timezone=True)),
+    )
+
+
+class Proxy(SQLModel, table=True):
+    __tablename__ = "proxies"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str
+    type: str = Field(index=True)
+    host: str
+    port: int
+    username: Optional[str] = None
+    password: Optional[str] = None
+    note: Optional[str] = None
+    enabled: bool = Field(default=True, index=True)
     created_at: dt.datetime = Field(
         default_factory=lambda: dt.datetime.now(dt.timezone.utc),
         sa_column=Column(DateTime(timezone=True)),
