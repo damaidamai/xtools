@@ -33,7 +33,7 @@ LOG_LIMIT = 4000
 DEFAULT_WORDLIST_TYPE = "subdomain"
 
 # 配置参数
-MAX_CONCURRENT_REQUESTS = int(os.getenv("MAX_CONCURRENT_REQUESTS", "100"))
+MAX_CONCURRENT_REQUESTS = int(os.getenv("MAX_CONCURRENT_REQUESTS", "50"))
 REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "5"))
 MAX_RESPONSE_SIZE = int(os.getenv("MAX_RESPONSE_SIZE", "4096"))
 VERIFY_SSL = os.getenv("VERIFY_SSL", "false").lower() == "true"
@@ -90,7 +90,7 @@ async def _dns_resolve(subdomain: str, resolver) -> Tuple[bool, Optional[List[st
             return (True, ips) if ips else (True, None)
         except Exception as e:
             logger.debug("Fallback DNS resolve failed for {}: {}", subdomain, e)
-            return True, None
+            return False, None
     
     try:
         ips = []
@@ -117,8 +117,8 @@ async def _dns_resolve(subdomain: str, resolver) -> Tuple[bool, Optional[List[st
         
     except Exception as e:
         logger.debug("DNS resolve failed for {}: {}", subdomain, e)
-        # DNS 查询失败，保守地认为可能存在（避免漏掉）
-        return True, None
+        # DNS 查询失败，按不存在处理，避免继续发起 HTTP 请求
+        return False, None
 
 
 def _extract_peer_ip(response: aiohttp.ClientResponse) -> Optional[str]:

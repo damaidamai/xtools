@@ -15,7 +15,7 @@ def setup_http_mode():
 
     # 设置环境变量
     os.environ["ENABLE_HTTP_ENUM"] = "true"
-    os.environ["MAX_CONCURRENT_REQUESTS"] = "100"
+    os.environ["MAX_CONCURRENT_REQUESTS"] = "50"
     os.environ["REQUEST_TIMEOUT"] = "8"
     os.environ["VERIFY_SSL"] = "false"
     os.environ["ENABLE_GET_FALLBACK"] = "true"

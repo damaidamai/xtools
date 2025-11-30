@@ -7,6 +7,7 @@ import json
 import os
 import re
 import shlex
+import ssl
 import uuid
 from typing import Optional
 from urllib.parse import urlparse
@@ -59,6 +60,7 @@ PROXY_TYPES = {"http", "https", "socks5"}
 # 使用可返回外网 IP/ASN 的测试端点，便于确认代理真实出网
 PROXY_TEST_URL = "http://ip.im/info"
 MAX_REQUEST_TEST_COUNT = 5
+REQUEST_TEST_VERIFY_SSL = os.getenv("REQUEST_TEST_VERIFY_SSL", "true").lower() == "true"
 
 app = FastAPI(title="XTools Backend")
 
@@ -189,6 +191,7 @@ def _map_proxy(proxy: Proxy) -> ProxyOut:
 async def _test_proxy_connectivity(proxy: Proxy) -> float:
     start = dt.datetime.now(dt.timezone.utc)
     target = urlparse(PROXY_TEST_URL)
+    ssl_ctx = _get_request_ssl_context()
 
     if proxy.type in {"http", "https"}:
         proxy_url = f"http://{proxy.host}:{proxy.port}"
@@ -200,12 +203,16 @@ async def _test_proxy_connectivity(proxy: Proxy) -> float:
                     PROXY_TEST_URL,
                     proxy=proxy_url,
                     proxy_auth=auth,
+                    ssl=ssl_ctx,
                     allow_redirects=False,
                 ) as resp:
                     if resp.status >= 400:
                         raise RuntimeError(f"HTTP 状态码异常：{resp.status}")
         except Exception as exc:
-            raise RuntimeError(f"无法通过代理访问 {PROXY_TEST_URL}：{exc}") from exc
+            extra = ""
+            if isinstance(exc, aiohttp.ClientConnectorError) and exc.os_error:
+                extra = f" [os_error={exc.os_error}]"
+            raise RuntimeError(f"无法通过代理访问 {PROXY_TEST_URL}：{exc}{extra}") from exc
 
     elif proxy.type == "socks5":
         await _test_socks5_proxy(proxy, target.hostname or "example.com", target.port or 80)
@@ -348,6 +355,14 @@ def _build_proxy_url(proxy: Proxy) -> str:
     return f"{scheme}://{auth}{proxy.host}:{proxy.port}"
 
 
+def _get_request_ssl_context() -> ssl.SSLContext:
+    ctx = ssl.create_default_context()
+    if not REQUEST_TEST_VERIFY_SSL:
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+    return ctx
+
+
 async def _execute_single_request(
     method: str,
     url: str,
@@ -358,22 +373,24 @@ async def _execute_single_request(
     start = dt.datetime.now(dt.timezone.utc)
     proxy_url: Optional[str] = None
     connector = None
+    ssl_ctx = _get_request_ssl_context()
 
     if proxy:
         if proxy.type == "socks5":
-            connector = ProxyConnector.from_url(_build_proxy_url(proxy))
+            connector = ProxyConnector.from_url(_build_proxy_url(proxy), ssl=ssl_ctx)
         else:
             proxy_url = _build_proxy_url(proxy)
 
     timeout = aiohttp.ClientTimeout(total=20)
     try:
-        async with aiohttp.ClientSession(timeout=timeout, connector=connector) as session:
+        async with aiohttp.ClientSession(timeout=timeout, connector=connector, connector_owner=True) as session:
             async with session.request(
                 method,
                 url,
                 headers=headers,
                 data=data,
                 proxy=proxy_url,
+                ssl=ssl_ctx,
                 allow_redirects=False,
             ) as resp:
                 text = await resp.text(errors="ignore")
@@ -391,11 +408,14 @@ async def _execute_single_request(
                 )
     except Exception as exc:  # noqa: BLE001
         elapsed = (dt.datetime.now(dt.timezone.utc) - start).total_seconds() * 1000
+        cause = ""
+        if isinstance(exc, aiohttp.ClientConnectorError) and exc.os_error:
+            cause = f" [os_error={exc.os_error}]"
         return RequestTestResult(
             index=0,
             url=url,
             method=method,
-            error=str(exc),
+            error=f"{exc.__class__.__name__}: {exc}{cause}",
             elapsed_ms=round(elapsed, 2),
         )
 
